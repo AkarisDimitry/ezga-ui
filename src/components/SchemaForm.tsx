@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { ChevronRight, ChevronDown, Info, X, RotateCcw, FileSearch, Sparkles, Plus } from 'lucide-react';
+import React, { useEffect, useMemo } from 'react';
+import { ChevronRight, ChevronDown, Info, X, RotateCcw, FileSearch, Sparkles, Plus, AlertCircle } from 'lucide-react';
 
 interface SchemaProperty {
   type?: string;
@@ -22,30 +22,25 @@ interface SchemaFormProps {
   data: any;
   onChange: (newData: any) => void;
   definitions: Record<string, any>;
+  simpleMode?: boolean;
 }
 
 const MUTATION_PRESETS: Record<string, any> = {
-  "rattle": {
-    "factory": "rattle",
-    "kwargs": { "std": 0.1, "species": [], "components": [0,1,2] }
-  },
-  "swap": {
-    "factory": "swap",
-    "kwargs": { "ID1": "C", "ID2": "O", "N": 1 }
-  },
-  "add": {
-    "factory": "add",
-    "kwargs": { "species": ["H"], "collision_tolerance": 2.0 }
-  },
-  "remove": {
-    "factory": "remove",
-    "kwargs": { "species": "H", "N": 1 }
-  },
-  "strain": {
-    "factory": "strain",
-    "kwargs": { "max_strain": 0.1 }
-  }
+  "rattle": { "factory": "rattle", "kwargs": { "std": 0.1, "species": [], "components": [0,1,2] } },
+  "swap": { "factory": "swap", "kwargs": { "ID1": "Ni", "ID2": "O", "N": 1 } },
+  "add": { "factory": "add", "kwargs": { "species": ["O"], "collision_tolerance": 2.0 } },
+  "remove": { "factory": "remove", "kwargs": { "species": "O", "N": 1 } },
+  "strain": { "factory": "strain", "kwargs": { "max_strain": 0.08 } },
+  "shear": { "factory": "shear", "kwargs": { "max_shear": 0.08, "plane": "xy" } }
 };
+
+const BASIC_FIELDS = [
+  'output_path', 'max_generations', 'seed', 'dataset_path', 'composition', 
+  'constraints', 'calculator', 'steps_max', 'fmax', 'supercells', 'overrides',
+  'initial_mutation_rate', 'mutation_funcs', 'crossover_funcs', 'ef_bounds', 'blacklist'
+];
+
+const BASIC_KWARGS = ['species', 'std', 'constraints'];
 
 const SchemaField: React.FC<{
   name: string;
@@ -54,7 +49,8 @@ const SchemaField: React.FC<{
   onChange: (val: any) => void;
   definitions: Record<string, any>;
   level: number;
-}> = ({ name, property, value, onChange, definitions, level }) => {
+  simpleMode?: boolean;
+}> = ({ name, property, value, onChange, definitions, level, simpleMode }) => {
   let prop = { ...property };
   if (prop.$ref) {
     const refKey = prop.$ref.split('/').pop() || '';
@@ -82,11 +78,39 @@ const SchemaField: React.FC<{
     }
   }, [value, options.length]);
 
+  // Hide advanced fields in simple mode
+  if (simpleMode && level === 0 && !BASIC_FIELDS.includes(name)) {
+    return null;
+  }
+
+  // Filter kwargs in simple mode
+  if (simpleMode && name === 'kwargs' && prop.type === 'object') {
+     // We will filter the children later in the object rendering logic
+  }
+
   if (options.length > 1) {
+    // If it's just choosing between object and null, or just one real option, don't show selector
+    const realOptions = options.filter(opt => opt.type !== 'null');
+    const shouldShowSelector = realOptions.length > 1;
+
+    if (!shouldShowSelector) {
+      return (
+        <SchemaField 
+          name={name}
+          property={realOptions[0]}
+          value={value}
+          onChange={onChange}
+          definitions={definitions}
+          level={level}
+          simpleMode={simpleMode}
+        />
+      );
+    }
+
     return (
       <div className={`field-container anyOf-field level-${level}`}>
         <div className="anyOf-selector">
-          <label className="field-label">{prop.title || name} Type:</label>
+          <label className="field-label">{prop.title || name} Mode</label>
           <select 
             value={anyOfIndex} 
             onChange={(e) => {
@@ -108,6 +132,7 @@ const SchemaField: React.FC<{
           onChange={onChange}
           definitions={definitions}
           level={level}
+          simpleMode={simpleMode}
         />
       </div>
     );
@@ -122,7 +147,8 @@ const SchemaField: React.FC<{
   const isPath = prop.format === 'path' || name.toLowerCase().endsWith('_path');
   const isMutationList = name === 'mutation_funcs';
 
-  const [isExpanded, setIsExpanded] = React.useState(level < 1);
+  const isKwargs = name === 'kwargs';
+  const [isExpanded, setIsExpanded] = React.useState(level < 1 || isKwargs);
 
   const renderLabel = () => (
     <div className="field-header-info">
@@ -146,17 +172,45 @@ const SchemaField: React.FC<{
   );
 
   if (prop.type === 'object') {
-    // FALLBACK: If schema has no properties but value has keys, render them dynamically
     const schemaProps = prop.properties || {};
     const valueKeys = typeof value === 'object' && value !== null ? Object.keys(value) : [];
-    const allKeys = Array.from(new Set([...Object.keys(schemaProps), ...valueKeys]));
+    let allKeys = Array.from(new Set([...Object.keys(schemaProps), ...valueKeys]));
+
+    // Filter kwargs in simple mode
+    if (simpleMode && name === 'kwargs') {
+      allKeys = allKeys.filter(key => BASIC_KWARGS.includes(key));
+    }
+
+    // Determine a better label if this is an operator item
+    const displayLabel = (value?.factory && typeof value.factory === 'string') 
+      ? value.factory.toUpperCase() 
+      : label;
 
     return (
       <div className={`field-container object-field level-${level}`}>
         <div className="field-header" onClick={() => setIsExpanded(!isExpanded)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            {renderLabel()}
+            <div className={`expander ${isExpanded ? 'expanded' : ''}`}>
+               <ChevronRight size={16} />
+            </div>
+            <div className="field-header-info">
+              <span className="field-label">{displayLabel}</span>
+              {description && (
+                <div className="tooltip">
+                  <Info size={14} />
+                  <span className="tooltiptext">{description}</span>
+                </div>
+              )}
+              {isModified && (
+                <button 
+                  className="reset-btn" 
+                  onClick={(e) => { e.stopPropagation(); onChange(prop.default); }}
+                  title="Reset to default"
+                >
+                  <RotateCcw size={12} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
         {isExpanded && (
@@ -171,6 +225,7 @@ const SchemaField: React.FC<{
                   onChange={(val) => onChange({ ...value, [childName]: val })}
                   definitions={definitions}
                   level={level + 1}
+                  simpleMode={simpleMode}
                 />
               ))
             ) : (
@@ -194,33 +249,37 @@ const SchemaField: React.FC<{
           {isMutationList && <Sparkles size={14} className="accent-icon" />}
         </div>
         <div className="array-items">
-          {Array.isArray(value) && value.map((item, idx) => (
-            <div key={idx} className="array-item-wrapper">
-               <div className="array-item-content">
-                <SchemaField
-                  name={`${idx}`}
-                  property={prop.items || {}}
-                  value={item}
-                  onChange={(val) => {
-                    const newArr = [...value];
-                    newArr[idx] = val;
+          {Array.isArray(value) && value.map((item, idx) => {
+            const isPrimitive = ['string', 'number', 'boolean'].includes(typeof item) || prop.items?.type !== 'object';
+            return (
+              <div key={idx} className={`array-item-wrapper ${isPrimitive ? 'primitive-item' : ''}`}>
+                 <div className="array-item-content">
+                  <SchemaField
+                    name={`${idx}`}
+                    property={prop.items || {}}
+                    value={item}
+                    onChange={(val) => {
+                      const newArr = [...value];
+                      newArr[idx] = val;
+                      onChange(newArr);
+                    }}
+                    definitions={definitions}
+                    level={level + 1}
+                    simpleMode={simpleMode}
+                  />
+                 </div>
+                 <button 
+                  className="remove-item-btn"
+                  onClick={() => {
+                    const newArr = value.filter((_, i) => i !== idx);
                     onChange(newArr);
                   }}
-                  definitions={definitions}
-                  level={level + 1}
-                />
-               </div>
-               <button 
-                className="remove-item-btn"
-                onClick={() => {
-                  const newArr = value.filter((_, i) => i !== idx);
-                  onChange(newArr);
-                }}
-               >
-                 <X size={14} />
-               </button>
-            </div>
-          ))}
+                 >
+                   <X size={14} />
+                 </button>
+              </div>
+            );
+          })}
           
           <div className="add-actions">
             {isMutationList ? (
@@ -231,28 +290,28 @@ const SchemaField: React.FC<{
                       onChange([...(value || []), {}]);
                     } else {
                       const preset = MUTATION_PRESETS[e.target.value];
-                      if (preset) onChange([...(value || []), preset]);
+                      if (preset) onChange([...(value || []), JSON.parse(JSON.stringify(preset))]);
                     }
                     e.target.value = "";
                   }}
                   defaultValue=""
                 >
-                  <option value="" disabled>+ Quick Add Mutation...</option>
+                  <option value="" disabled>+ Add Evolutionary Operator...</option>
                   {Object.keys(MUTATION_PRESETS).map(m => (
-                    <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+                    <option key={m} value={m}>{m.toUpperCase()}</option>
                   ))}
-                  <option value="custom">Custom Object</option>
+                  <option value="custom">CUSTOM OBJECT</option>
                 </select>
               </div>
             ) : (
               <button 
                 className="add-item-btn"
                 onClick={() => {
-                  const defaultVal = prop.items?.default !== undefined ? prop.items.default : (prop.items?.type === 'object' ? {} : '');
+                  const defaultVal = prop.items?.default !== undefined ? prop.items.default : (prop.items?.type === 'object' ? {} : (prop.items?.type === 'array' ? [] : ''));
                   onChange([...(value || []), defaultVal]);
                 }}
               >
-                + Add Item
+                <Plus size={14} style={{ marginRight: '6px' }} /> Add Entry
               </button>
             )}
           </div>
@@ -266,7 +325,7 @@ const SchemaField: React.FC<{
       <div className="field-container primitive-field">
         {renderLabel()}
         <select value={value ?? prop.default ?? ''} onChange={(e) => onChange(e.target.value)}>
-          <option value="" disabled>Select {label}...</option>
+          <option value="" disabled>Select...</option>
           {prop.enum.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
@@ -373,26 +432,44 @@ const SchemaField: React.FC<{
   );
 };
 
-export const SchemaForm: React.FC<SchemaFormProps> = ({ schema, data, onChange, definitions }) => {
+export const SchemaForm: React.FC<SchemaFormProps> = ({ schema, data, onChange, definitions, simpleMode }) => {
   let finalSchema = { ...schema };
   if (finalSchema.$ref) {
     const refKey = finalSchema.$ref.split('/').pop() || '';
     finalSchema = { ...finalSchema, ...definitions[refKey] };
   }
 
+  const properties = useMemo(() => {
+    return Object.entries(finalSchema.properties || {});
+  }, [finalSchema]);
+
+  const visibleProperties = useMemo(() => {
+    if (!simpleMode) return properties;
+    return properties.filter(([name]) => BASIC_FIELDS.includes(name) || name.includes('supercells') || name.includes('overrides'));
+  }, [properties, simpleMode]);
+
   return (
     <div className="schema-form fade-in">
-      {Object.entries(finalSchema.properties || {}).map(([name, property]: [string, any]) => (
-        <SchemaField
-          key={name}
-          name={name}
-          property={property}
-          value={data?.[name]}
-          onChange={(val) => onChange({ ...data, [name]: val })}
-          definitions={definitions}
-          level={0}
-        />
-      ))}
+      {visibleProperties.length > 0 ? (
+        visibleProperties.map(([name, property]: [string, any]) => (
+          <SchemaField
+            key={name}
+            name={name}
+            property={property}
+            value={data?.[name]}
+            onChange={(val) => onChange({ ...data, [name]: val })}
+            definitions={definitions}
+            level={0}
+            simpleMode={simpleMode}
+          />
+        ))
+      ) : (
+        <div className="empty-state">
+           <AlertCircle size={32} color="var(--text-secondary)" style={{ marginBottom: '12px', opacity: 0.5 }} />
+           <p>No essential parameters in this section.</p>
+           <button className="secondary" style={{ marginTop: '16px' }} onClick={() => {}}>Switch to Advanced Mode</button>
+        </div>
+      )}
     </div>
   );
 };
