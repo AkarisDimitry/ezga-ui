@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, ChevronDown, Info, X, RotateCcw, FileSearch } from 'lucide-react';
+import { ChevronRight, ChevronDown, Info, X, RotateCcw, FileSearch, Sparkles } from 'lucide-react';
 
 interface SchemaProperty {
   type?: string;
@@ -14,6 +14,7 @@ interface SchemaProperty {
   format?: string;
   minimum?: number;
   maximum?: number;
+  const?: any;
 }
 
 interface SchemaFormProps {
@@ -22,6 +23,30 @@ interface SchemaFormProps {
   onChange: (newData: any) => void;
   definitions: Record<string, any>;
 }
+
+// Predefined EZGA Mutations for "Simple" selection
+const MUTATION_PRESETS: Record<string, any> = {
+  "rattle": {
+    "factory": "rattle",
+    "kwargs": { "std": 0.1, "species": [], "components": [0,1,2] }
+  },
+  "swap": {
+    "factory": "swap",
+    "kwargs": { "ID1": "C", "ID2": "O", "N": 1 }
+  },
+  "add": {
+    "factory": "add",
+    "kwargs": { "species": ["H"], "collision_tolerance": 2.0 }
+  },
+  "remove": {
+    "factory": "remove",
+    "kwargs": { "species": "H", "N": 1 }
+  },
+  "strain": {
+    "factory": "strain",
+    "kwargs": { "max_strain": 0.1 }
+  }
+};
 
 const SchemaField: React.FC<{
   name: string;
@@ -38,16 +63,55 @@ const SchemaField: React.FC<{
     prop = { ...prop, ...definitions[refKey] };
   }
 
-  // Handle anyOf (mostly for null | type)
+  // Handle anyOf
+  const [anyOfIndex, setAnyOfIndex] = React.useState(0);
   if (prop.anyOf) {
-    const nonNullType = prop.anyOf.find((t: any) => t.type !== 'null');
-    if (nonNullType) {
-      if (nonNullType.$ref) {
-        const refKey = nonNullType.$ref.split('/').pop() || '';
-        prop = { ...prop, ...definitions[refKey] };
-      } else {
-        prop = { ...prop, ...nonNullType };
+    // If it's just [type, null], we already handle it by picking the non-null one in previous version
+    // But now we want to support actual multiple types (Mutation variants)
+    const options = prop.anyOf.map((opt, i) => {
+      let resolved = opt;
+      if (opt.$ref) {
+        const refKey = opt.$ref.split('/').pop() || '';
+        resolved = definitions[refKey];
       }
+      return { ...resolved, originalIndex: i };
+    });
+
+    // Simple heuristic: if value exists, try to find which anyOf it matches
+    // For now, let's just let the user pick if there are multiple "real" options
+    const filteredOptions = options.filter(opt => opt.type !== 'null');
+    
+    if (filteredOptions.length > 1) {
+       return (
+         <div className={`field-container anyOf-field level-${level}`}>
+           <div className="anyOf-selector">
+              <label className="field-label">{prop.title || name} (Type):</label>
+              <select 
+                value={anyOfIndex} 
+                onChange={(e) => {
+                  const idx = parseInt(e.target.value);
+                  setAnyOfIndex(idx);
+                  // Reset value to default of the new type
+                  onChange(filteredOptions[idx].default || (filteredOptions[idx].type === 'object' ? {} : ''));
+                }}
+              >
+                {filteredOptions.map((opt, i) => (
+                  <option key={i} value={i}>{opt.title || opt.type || `Option ${i+1}`}</option>
+                ))}
+              </select>
+           </div>
+           <SchemaField 
+             name={name}
+             property={filteredOptions[anyOfIndex]}
+             value={value}
+             onChange={onChange}
+             definitions={definitions}
+             level={level}
+           />
+         </div>
+       );
+    } else if (filteredOptions.length === 1) {
+      prop = { ...prop, ...filteredOptions[0] };
     }
   }
 
@@ -56,6 +120,7 @@ const SchemaField: React.FC<{
   const isModified = value !== undefined && value !== prop.default;
   const isTemperature = label.toLowerCase().includes('temperature');
   const isPath = prop.format === 'path' || name.toLowerCase().endsWith('_path');
+  const isMutationList = name === 'mutation_funcs';
 
   const [isExpanded, setIsExpanded] = React.useState(level < 1);
 
@@ -114,6 +179,7 @@ const SchemaField: React.FC<{
       <div className={`field-container array-field level-${level}`}>
         <div className="field-header">
           {renderLabel()}
+          {isMutationList && <Sparkles size={14} className="accent-icon" />}
         </div>
         <div className="array-items">
           {Array.isArray(value) && value.map((item, idx) => (
@@ -143,15 +209,37 @@ const SchemaField: React.FC<{
                </button>
             </div>
           ))}
-          <button 
-            className="add-item-btn"
-            onClick={() => {
-              const defaultVal = prop.items.default !== undefined ? prop.items.default : (prop.items.type === 'object' ? {} : '');
-              onChange([...(value || []), defaultVal]);
-            }}
-          >
-            + Add to {label}
-          </button>
+          
+          <div className="add-actions">
+            {isMutationList ? (
+              <div className="preset-selector">
+                <select 
+                  onChange={(e) => {
+                    const preset = MUTATION_PRESETS[e.target.value];
+                    if (preset) onChange([...(value || []), preset]);
+                    e.target.value = "";
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>+ Quick Add Mutation...</option>
+                  {Object.keys(MUTATION_PRESETS).map(m => (
+                    <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+                  ))}
+                  <option value="custom">Custom Object</option>
+                </select>
+              </div>
+            ) : (
+              <button 
+                className="add-item-btn"
+                onClick={() => {
+                  const defaultVal = prop.items.default !== undefined ? prop.items.default : (prop.items.type === 'object' ? {} : '');
+                  onChange([...(value || []), defaultVal]);
+                }}
+              >
+                + Add Item
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -249,7 +337,7 @@ const SchemaField: React.FC<{
             style={{ display: 'none' }} 
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) onChange(file.name); // In a real app, this might be more complex
+              if (file) onChange(file.name);
             }}
           />
         </div>

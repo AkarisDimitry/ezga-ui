@@ -464,3 +464,49 @@ pre {
   background: rgba(255, 255, 255, 0.1);
   color: var(--accent-primary);
 }
+
+/* anyOf Selector */
+.anyOf-field {
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.03);
+  margin-bottom: 8px;
+}
+
+.anyOf-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.anyOf-selector select {
+  flex: 1;
+  border-color: var(--accent-secondary);
+}
+
+/* Preset Selector */
+.preset-selector {
+  margin-top: 12px;
+}
+
+.preset-selector select {
+  width: 100%;
+  border: 1px dashed var(--accent-primary);
+  background: rgba(52, 211, 153, 0.05);
+  color: var(--accent-primary);
+  cursor: pointer;
+  padding: 10px;
+}
+
+.preset-selector select:hover {
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.accent-icon {
+  color: var(--accent-primary);
+  filter: drop-shadow(0 0 5px rgba(52, 211, 153, 0.5));
+}
