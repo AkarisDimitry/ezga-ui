@@ -1,5 +1,5 @@
-import React from 'react';
-import { ChevronRight, ChevronDown, Info, X, RotateCcw, FileSearch, Sparkles } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { ChevronRight, ChevronDown, Info, X, RotateCcw, FileSearch, Sparkles, Plus } from 'lucide-react';
 
 interface SchemaProperty {
   type?: string;
@@ -24,7 +24,6 @@ interface SchemaFormProps {
   definitions: Record<string, any>;
 }
 
-// Predefined EZGA Mutations for "Simple" selection
 const MUTATION_PRESETS: Record<string, any> = {
   "rattle": {
     "factory": "rattle",
@@ -56,63 +55,64 @@ const SchemaField: React.FC<{
   definitions: Record<string, any>;
   level: number;
 }> = ({ name, property, value, onChange, definitions, level }) => {
-  // Resolve $ref if present
   let prop = { ...property };
   if (prop.$ref) {
     const refKey = prop.$ref.split('/').pop() || '';
     prop = { ...prop, ...definitions[refKey] };
   }
 
-  // Handle anyOf
-  const [anyOfIndex, setAnyOfIndex] = React.useState(0);
-  if (prop.anyOf) {
-    // If it's just [type, null], we already handle it by picking the non-null one in previous version
-    // But now we want to support actual multiple types (Mutation variants)
-    const options = prop.anyOf.map((opt, i) => {
-      let resolved = opt;
-      if (opt.$ref) {
-        const refKey = opt.$ref.split('/').pop() || '';
-        resolved = definitions[refKey];
-      }
-      return { ...resolved, originalIndex: i };
-    });
-
-    // Simple heuristic: if value exists, try to find which anyOf it matches
-    // For now, let's just let the user pick if there are multiple "real" options
-    const filteredOptions = options.filter(opt => opt.type !== 'null');
-    
-    if (filteredOptions.length > 1) {
-       return (
-         <div className={`field-container anyOf-field level-${level}`}>
-           <div className="anyOf-selector">
-              <label className="field-label">{prop.title || name} (Type):</label>
-              <select 
-                value={anyOfIndex} 
-                onChange={(e) => {
-                  const idx = parseInt(e.target.value);
-                  setAnyOfIndex(idx);
-                  // Reset value to default of the new type
-                  onChange(filteredOptions[idx].default || (filteredOptions[idx].type === 'object' ? {} : ''));
-                }}
-              >
-                {filteredOptions.map((opt, i) => (
-                  <option key={i} value={i}>{opt.title || opt.type || `Option ${i+1}`}</option>
-                ))}
-              </select>
-           </div>
-           <SchemaField 
-             name={name}
-             property={filteredOptions[anyOfIndex]}
-             value={value}
-             onChange={onChange}
-             definitions={definitions}
-             level={level}
-           />
-         </div>
-       );
-    } else if (filteredOptions.length === 1) {
-      prop = { ...prop, ...filteredOptions[0] };
+  const options = prop.anyOf ? prop.anyOf.map((opt, i) => {
+    let resolved = opt;
+    if (opt.$ref) {
+      const refKey = opt.$ref.split('/').pop() || '';
+      resolved = definitions[refKey];
     }
+    return { ...resolved, originalIndex: i };
+  }).filter(opt => opt.type !== 'null') : [];
+
+  const [anyOfIndex, setAnyOfIndex] = React.useState(0);
+
+  useEffect(() => {
+    if (options.length > 1 && value !== undefined) {
+      const valType = Array.isArray(value) ? 'array' : typeof value;
+      const matchingIdx = options.findIndex(opt => opt.type === valType);
+      if (matchingIdx !== -1 && matchingIdx !== anyOfIndex) {
+        setAnyOfIndex(matchingIdx);
+      }
+    }
+  }, [value, options.length]);
+
+  if (options.length > 1) {
+    return (
+      <div className={`field-container anyOf-field level-${level}`}>
+        <div className="anyOf-selector">
+          <label className="field-label">{prop.title || name} Type:</label>
+          <select 
+            value={anyOfIndex} 
+            onChange={(e) => {
+              const idx = parseInt(e.target.value);
+              setAnyOfIndex(idx);
+              const defaultVal = options[idx].default !== undefined ? options[idx].default : (options[idx].type === 'object' ? {} : (options[idx].type === 'number' ? 0 : ''));
+              onChange(defaultVal);
+            }}
+          >
+            {options.map((opt, i) => (
+              <option key={i} value={i}>{opt.title || opt.type || `Option ${i+1}`}</option>
+            ))}
+          </select>
+        </div>
+        <SchemaField 
+          name={name}
+          property={options[anyOfIndex]}
+          value={value}
+          onChange={onChange}
+          definitions={definitions}
+          level={level}
+        />
+      </div>
+    );
+  } else if (options.length === 1) {
+    prop = { ...prop, ...options[0] };
   }
 
   const label = prop.title || name;
@@ -145,8 +145,12 @@ const SchemaField: React.FC<{
     </div>
   );
 
-  // Render based on type
   if (prop.type === 'object') {
+    // FALLBACK: If schema has no properties but value has keys, render them dynamically
+    const schemaProps = prop.properties || {};
+    const valueKeys = typeof value === 'object' && value !== null ? Object.keys(value) : [];
+    const allKeys = Array.from(new Set([...Object.keys(schemaProps), ...valueKeys]));
+
     return (
       <div className={`field-container object-field level-${level}`}>
         <div className="field-header" onClick={() => setIsExpanded(!isExpanded)}>
@@ -157,17 +161,25 @@ const SchemaField: React.FC<{
         </div>
         {isExpanded && (
           <div className="field-children">
-            {Object.entries(prop.properties || {}).map(([childName, childProp]) => (
-              <SchemaField
-                key={childName}
-                name={childName}
-                property={childProp}
-                value={value?.[childName]}
-                onChange={(val) => onChange({ ...value, [childName]: val })}
-                definitions={definitions}
-                level={level + 1}
-              />
-            ))}
+            {allKeys.length > 0 ? (
+              allKeys.map((childName) => (
+                <SchemaField
+                  key={childName}
+                  name={childName}
+                  property={schemaProps[childName] || { type: typeof (value as any)[childName] === 'object' ? (Array.isArray((value as any)[childName]) ? 'array' : 'object') : typeof (value as any)[childName] }}
+                  value={(value as any)?.[childName]}
+                  onChange={(val) => onChange({ ...value, [childName]: val })}
+                  definitions={definitions}
+                  level={level + 1}
+                />
+              ))
+            ) : (
+              <div className="empty-object-actions">
+                 <button className="add-item-btn" onClick={() => onChange({ ...value, new_field: "" })}>
+                   <Plus size={12} /> Add Property
+                 </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -187,7 +199,7 @@ const SchemaField: React.FC<{
                <div className="array-item-content">
                 <SchemaField
                   name={`${idx}`}
-                  property={prop.items}
+                  property={prop.items || {}}
                   value={item}
                   onChange={(val) => {
                     const newArr = [...value];
@@ -215,8 +227,12 @@ const SchemaField: React.FC<{
               <div className="preset-selector">
                 <select 
                   onChange={(e) => {
-                    const preset = MUTATION_PRESETS[e.target.value];
-                    if (preset) onChange([...(value || []), preset]);
+                    if (e.target.value === 'custom') {
+                      onChange([...(value || []), {}]);
+                    } else {
+                      const preset = MUTATION_PRESETS[e.target.value];
+                      if (preset) onChange([...(value || []), preset]);
+                    }
                     e.target.value = "";
                   }}
                   defaultValue=""
@@ -232,7 +248,7 @@ const SchemaField: React.FC<{
               <button 
                 className="add-item-btn"
                 onClick={() => {
-                  const defaultVal = prop.items.default !== undefined ? prop.items.default : (prop.items.type === 'object' ? {} : '');
+                  const defaultVal = prop.items?.default !== undefined ? prop.items.default : (prop.items?.type === 'object' ? {} : '');
                   onChange([...(value || []), defaultVal]);
                 }}
               >
@@ -268,7 +284,7 @@ const SchemaField: React.FC<{
             type="checkbox" 
             checked={value ?? prop.default ?? false} 
             onChange={(e) => onChange(e.target.checked)} 
-            id={`switch-${name}-${level}`}
+            id={`switch-${name}-${level}-${Math.random()}`}
           />
           <label htmlFor={`switch-${name}-${level}`} className="switch-label"></label>
         </div>
