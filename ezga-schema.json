@@ -1,0 +1,1776 @@
+{
+  "$defs": {
+    "AgenticParams": {
+      "additionalProperties": false,
+      "properties": {
+        "hash_name": {
+          "default": "sha256",
+          "title": "Hash Name",
+          "type": "string"
+        },
+        "shared_dir": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shared Dir"
+        },
+        "shard_width": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "title": "Shard Width",
+          "type": "integer"
+        },
+        "persist_seen": {
+          "default": false,
+          "title": "Persist Seen",
+          "type": "boolean"
+        },
+        "poll_interval": {
+          "default": 2.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Poll Interval",
+          "type": "number"
+        },
+        "max_buffer": {
+          "default": 7,
+          "exclusiveMinimum": 0,
+          "title": "Max Buffer",
+          "type": "integer"
+        },
+        "max_retained": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Retained"
+        },
+        "auto_publish": {
+          "default": true,
+          "title": "Auto Publish",
+          "type": "boolean"
+        },
+        "fetch_every": {
+          "default": 7,
+          "exclusiveMinimum": 0,
+          "title": "Fetch Every",
+          "type": "integer"
+        },
+        "strategy": {
+          "default": "balanced",
+          "title": "Strategy",
+          "type": "string"
+        }
+      },
+      "title": "AgenticParams",
+      "type": "object"
+    },
+    "ConvergenceParams": {
+      "additionalProperties": false,
+      "properties": {
+        "stall_threshold": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stall Threshold"
+        },
+        "objective_threshold": {
+          "default": 0.0001,
+          "minimum": 0.0,
+          "title": "Objective Threshold",
+          "type": "number"
+        },
+        "alpha_discovery": {
+          "default": 0.05,
+          "minimum": 0.0,
+          "title": "Alpha Discovery",
+          "type": "number"
+        },
+        "alpha_progress": {
+          "default": 0.05,
+          "minimum": 0.0,
+          "title": "Alpha Progress",
+          "type": "number"
+        },
+        "alpha_acceptance": {
+          "default": 0.1,
+          "minimum": 0.0,
+          "title": "Alpha Acceptance",
+          "type": "number"
+        },
+        "max_cache_size": {
+          "default": 1000000,
+          "exclusiveMinimum": 0,
+          "title": "Max Cache Size",
+          "type": "integer"
+        },
+        "track_features": {
+          "default": false,
+          "title": "Track Features",
+          "type": "boolean"
+        }
+      },
+      "title": "ConvergenceParams",
+      "type": "object"
+    },
+    "EnsembleBase": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/EnsembleKind",
+          "default": "none"
+        },
+        "walkers": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Walkers",
+          "type": "integer"
+        },
+        "sweeps": {
+          "default": 1000,
+          "exclusiveMinimum": 0,
+          "title": "Sweeps",
+          "type": "integer"
+        },
+        "burn_in": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Burn In",
+          "type": "integer"
+        },
+        "thin": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Thin",
+          "type": "integer"
+        },
+        "store_trajectory": {
+          "default": true,
+          "title": "Store Trajectory",
+          "type": "boolean"
+        }
+      },
+      "title": "EnsembleBase",
+      "type": "object"
+    },
+    "EnsembleKind": {
+      "enum": [
+        "none",
+        "gcmc",
+        "replica_exchange",
+        "gibbs",
+        "nvt",
+        "identity",
+        "nested_sampling",
+        "hard_constraint"
+      ],
+      "title": "EnsembleKind",
+      "type": "string"
+    },
+    "EnsembleParams": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/EnsembleKind",
+          "default": "none"
+        },
+        "base": {
+          "$ref": "#/$defs/EnsembleBase"
+        },
+        "gcmc": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GCMCParams"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "replica_exchange": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReplicaExchangeParams"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "gibbs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GibbsParams"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "nvt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NVTParams"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "nested_sampling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NestedSamplingParams"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hard_constraint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HardConstraintParams"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "EnsembleParams",
+      "type": "object"
+    },
+    "EvaluatorParams": {
+      "additionalProperties": false,
+      "properties": {
+        "features_funcs": {
+          "default": null,
+          "title": "Features Funcs"
+        },
+        "objectives_funcs": {
+          "default": null,
+          "title": "Objectives Funcs"
+        },
+        "debug": {
+          "default": false,
+          "title": "Debug",
+          "type": "boolean"
+        }
+      },
+      "title": "EvaluatorParams",
+      "type": "object"
+    },
+    "GCMCParams": {
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "chemical_potential": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Chemical Potential",
+          "type": "object"
+        },
+        "move_weights": {
+          "additionalProperties": {
+            "exclusiveMinimum": 0.0,
+            "type": "number"
+          },
+          "title": "Move Weights",
+          "type": "object"
+        },
+        "max_displacement": {
+          "default": 0.1,
+          "exclusiveMinimum": 0.0,
+          "title": "Max Displacement",
+          "type": "number"
+        },
+        "insertion_region": {
+          "default": "box",
+          "enum": [
+            "box",
+            "slab",
+            "interlayer"
+          ],
+          "title": "Insertion Region",
+          "type": "string"
+        },
+        "local_relax_after_accept": {
+          "default": false,
+          "title": "Local Relax After Accept",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "temperature"
+      ],
+      "title": "GCMCParams",
+      "type": "object"
+    },
+    "GenerativeParams": {
+      "additionalProperties": false,
+      "description": "Generative proposal model (Bayesian Optimization by default).\n\nEnabled iff `size > 0`.",
+      "properties": {
+        "size": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Size",
+          "type": "integer"
+        },
+        "start_gen": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Start Gen",
+          "type": "integer"
+        },
+        "every": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Every",
+          "type": "integer"
+        },
+        "fit_frequency": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Fit Frequency",
+          "type": "integer"
+        },
+        "candidate_multiplier": {
+          "default": 10,
+          "exclusiveMinimum": 0,
+          "title": "Candidate Multiplier",
+          "type": "integer"
+        },
+        "training_subsample": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 200,
+          "title": "Training Subsample"
+        },
+        "subsample_strategy": {
+          "default": "random",
+          "enum": [
+            "random",
+            "diverse"
+          ],
+          "title": "Subsample Strategy",
+          "type": "string"
+        },
+        "warm_start": {
+          "default": true,
+          "title": "Warm Start",
+          "type": "boolean"
+        },
+        "use_ard": {
+          "default": true,
+          "title": "Use Ard",
+          "type": "boolean"
+        },
+        "n_restarts_optimizer": {
+          "default": 5,
+          "minimum": 0,
+          "title": "N Restarts Optimizer",
+          "type": "integer"
+        },
+        "save_model": {
+          "default": false,
+          "title": "Save Model",
+          "type": "boolean"
+        },
+        "save_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Save Path"
+        },
+        "discrete_design": {
+          "default": true,
+          "title": "Discrete Design",
+          "type": "boolean"
+        },
+        "tolerance": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            }
+          ],
+          "default": 0.1,
+          "title": "Tolerance"
+        },
+        "max_variation_iterations": {
+          "default": 20,
+          "exclusiveMinimum": 0,
+          "title": "Max Variation Iterations",
+          "type": "integer"
+        },
+        "max_mutations": {
+          "default": 200,
+          "exclusiveMinimum": 0,
+          "title": "Max Mutations",
+          "type": "integer"
+        },
+        "bo_kwargs": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bo Kwargs"
+        },
+        "custom": {
+          "anyOf": [
+            {
+              "description": "Callable function or shorthand",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom"
+        }
+      },
+      "title": "GenerativeParams",
+      "type": "object"
+    },
+    "GibbsParams": {
+      "additionalProperties": false,
+      "properties": {
+        "boxes": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "title": "Boxes",
+          "type": "integer"
+        },
+        "transfer_weight": {
+          "default": 0.9,
+          "exclusiveMinimum": 0.0,
+          "title": "Transfer Weight",
+          "type": "number"
+        },
+        "volume_weight": {
+          "default": 0.1,
+          "exclusiveMinimum": 0.0,
+          "title": "Volume Weight",
+          "type": "number"
+        },
+        "allow_volume_exchange": {
+          "default": true,
+          "title": "Allow Volume Exchange",
+          "type": "boolean"
+        },
+        "total_volume": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Volume"
+        },
+        "total_particles": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Particles"
+        },
+        "internal_weight": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Internal Weight",
+          "type": "number"
+        }
+      },
+      "title": "GibbsParams",
+      "type": "object"
+    },
+    "HardConstraintParams": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "HardConstraintParams",
+      "type": "object"
+    },
+    "HiSEParams": {
+      "additionalProperties": false,
+      "description": "Hierarchical Supercell Escalation (HiSE) coarse-to-fine settings.",
+      "properties": {
+        "supercells": {
+          "description": "Sequence of supercells, e.g. [[1,1,1],[2,1,1],[2,2,1]]",
+          "items": {
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Supercells",
+          "type": "array"
+        },
+        "input_from": {
+          "default": "final_dataset",
+          "description": "Where to read previous stage input from: final_dataset (root config.xyz) or latest_generation (scan generation/*/config.xyz).",
+          "enum": [
+            "final_dataset",
+            "latest_generation"
+          ],
+          "title": "Input From",
+          "type": "string"
+        },
+        "stage_dir_pattern": {
+          "default": "supercell_{a}_{b}_{c}",
+          "description": "Subdirectory name per stage under GAConfig.output_path.",
+          "title": "Stage Dir Pattern",
+          "type": "string"
+        },
+        "restart": {
+          "default": true,
+          "description": "Skip stages already complete; resume partial if possible.",
+          "title": "Restart",
+          "type": "boolean"
+        },
+        "overrides": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "items": {},
+                "type": "array"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Stage-specific overrides by key path (dot-notation) \u2192 list of values per stage.",
+          "title": "Overrides"
+        },
+        "carry": {
+          "default": "all",
+          "enum": [
+            "pareto",
+            "elites",
+            "all"
+          ],
+          "title": "Carry",
+          "type": "string"
+        },
+        "reseed_fraction": {
+          "default": 1.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Reseed Fraction",
+          "type": "number"
+        },
+        "lift_method": {
+          "const": "tile",
+          "default": "tile",
+          "title": "Lift Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "supercells"
+      ],
+      "title": "HiSEParams",
+      "type": "object"
+    },
+    "NVTParams": {
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "title": "Temperature",
+          "type": "number"
+        }
+      },
+      "required": [
+        "temperature"
+      ],
+      "title": "NVTParams",
+      "type": "object"
+    },
+    "NestedSamplingParams": {
+      "additionalProperties": false,
+      "description": "NestedSamplingKernel assumes that candidates provided\nby the upstream generator approximate independent\nsamples from the constrained prior:\n    \u03c0(\u03b8 | \u03a6 < \u03a6*)\nViolation of this assumption biases NS weights.",
+      "properties": {
+        "chemical_potential": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Chemical Potential",
+          "type": "object"
+        },
+        "stochastic_shrinkage": {
+          "default": false,
+          "title": "Stochastic Shrinkage",
+          "type": "boolean"
+        },
+        "strict_ns": {
+          "default": false,
+          "title": "Strict Ns",
+          "type": "boolean"
+        },
+        "T": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "T"
+        },
+        "beta": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Beta"
+        },
+        "tolerance": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tolerance"
+        },
+        "track_diagnostics": {
+          "default": true,
+          "title": "Track Diagnostics",
+          "type": "boolean"
+        },
+        "n_live": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Live"
+        },
+        "step_interval": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Step Interval",
+          "type": "integer"
+        }
+      },
+      "title": "NestedSamplingParams",
+      "type": "object"
+    },
+    "PopulationParams": {
+      "additionalProperties": false,
+      "properties": {
+        "dataset_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Path"
+        },
+        "template_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Path"
+        },
+        "db_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Db Path"
+        },
+        "db_ro_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Db Ro Path"
+        },
+        "filter_duplicates": {
+          "default": true,
+          "title": "Filter Duplicates",
+          "type": "boolean"
+        },
+        "size_limit": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size Limit"
+        },
+        "constraints": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "description": "Callable function or shorthand",
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraints"
+        },
+        "ef_bounds": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ef Bounds"
+        },
+        "collision_factor": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.8,
+          "title": "Collision Factor"
+        },
+        "blacklist": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blacklist"
+        },
+        "fetch_limit": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fetch Limit"
+        },
+        "skip_hashing": {
+          "default": false,
+          "title": "Skip Hashing",
+          "type": "boolean"
+        },
+        "skip_lineage": {
+          "default": true,
+          "title": "Skip Lineage",
+          "type": "boolean"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        }
+      },
+      "title": "PopulationParams",
+      "type": "object"
+    },
+    "RBFHashCfg": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "const": "rbf",
+          "default": "rbf",
+          "title": "Method",
+          "type": "string"
+        },
+        "number_of_bins": {
+          "default": 200,
+          "exclusiveMinimum": 0,
+          "title": "Number Of Bins",
+          "type": "integer"
+        },
+        "bin_volume_normalize": {
+          "default": false,
+          "title": "Bin Volume Normalize",
+          "type": "boolean"
+        },
+        "number_of_atoms_normalize": {
+          "default": false,
+          "title": "Number Of Atoms Normalize",
+          "type": "boolean"
+        },
+        "density_normalize": {
+          "default": false,
+          "title": "Density Normalize",
+          "type": "boolean"
+        },
+        "e_grid": {
+          "default": 0.01,
+          "exclusiveMinimum": 0.0,
+          "title": "E Grid",
+          "type": "number"
+        },
+        "v_grid": {
+          "default": 0.01,
+          "exclusiveMinimum": 0.0,
+          "title": "V Grid",
+          "type": "number"
+        },
+        "symprec": {
+          "default": 0.001,
+          "exclusiveMinimum": 0.0,
+          "title": "Symprec",
+          "type": "number"
+        },
+        "debug": {
+          "default": false,
+          "title": "Debug",
+          "type": "boolean"
+        }
+      },
+      "title": "RBFHashCfg",
+      "type": "object"
+    },
+    "RDFHashCfg": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "const": "rdf",
+          "default": "rdf",
+          "title": "Method",
+          "type": "string"
+        },
+        "r_max": {
+          "default": 10.0,
+          "exclusiveMinimum": 0.0,
+          "title": "R Max",
+          "type": "number"
+        },
+        "bin_width": {
+          "default": 0.02,
+          "exclusiveMinimum": 0.0,
+          "title": "Bin Width",
+          "type": "number"
+        },
+        "density_grid": {
+          "default": 0.0001,
+          "exclusiveMinimum": 0.0,
+          "title": "Density Grid",
+          "type": "number"
+        },
+        "e_grid": {
+          "default": 0.01,
+          "exclusiveMinimum": 0.0,
+          "title": "E Grid",
+          "type": "number"
+        },
+        "v_grid": {
+          "default": 0.01,
+          "exclusiveMinimum": 0.0,
+          "title": "V Grid",
+          "type": "number"
+        },
+        "symprec": {
+          "default": 0.001,
+          "exclusiveMinimum": 0.0,
+          "title": "Symprec",
+          "type": "number"
+        },
+        "debug": {
+          "default": false,
+          "title": "Debug",
+          "type": "boolean"
+        }
+      },
+      "title": "RDFHashCfg",
+      "type": "object"
+    },
+    "ReplicaExchangeParams": {
+      "additionalProperties": false,
+      "properties": {
+        "mu_ladder": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mu Ladder"
+        },
+        "T_ladder": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "T Ladder"
+        },
+        "exchange_every": {
+          "default": 100,
+          "exclusiveMinimum": 0,
+          "title": "Exchange Every",
+          "type": "integer"
+        },
+        "swap_pattern": {
+          "const": "even_odd",
+          "default": "even_odd",
+          "title": "Swap Pattern",
+          "type": "string"
+        },
+        "target_acceptance": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.2,
+          "title": "Target Acceptance"
+        }
+      },
+      "title": "ReplicaExchangeParams",
+      "type": "object"
+    },
+    "RepulsionMode": {
+      "enum": [
+        "min",
+        "sum"
+      ],
+      "title": "RepulsionMode",
+      "type": "string"
+    },
+    "ResumeMode": {
+      "enum": [
+        "folders_all",
+        "folders",
+        "snapshot"
+      ],
+      "title": "ResumeMode",
+      "type": "string"
+    },
+    "SelectionMethod": {
+      "enum": [
+        "boltzmann",
+        "boltzmann_bigdata",
+        "greedy",
+        "roulette",
+        "tournament",
+        "nsga3",
+        "nondominated_sorted",
+        "trajectory"
+      ],
+      "title": "SelectionMethod",
+      "type": "string"
+    },
+    "SelectionParams": {
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "default": 256,
+          "exclusiveMinimum": 0,
+          "title": "Size",
+          "type": "integer"
+        },
+        "weights": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weights"
+        },
+        "repulsion_weight": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Repulsion Weight",
+          "type": "number"
+        },
+        "repetition_penalty": {
+          "default": true,
+          "title": "Repetition Penalty",
+          "type": "boolean"
+        },
+        "objective_temperature": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Objective Temperature",
+          "type": "number"
+        },
+        "repulsion_mode": {
+          "$ref": "#/$defs/RepulsionMode",
+          "default": "min"
+        },
+        "composition_repulsion_weight": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Composition Repulsion Weight",
+          "type": "number"
+        },
+        "composition_decimals": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Composition Decimals",
+          "type": "integer"
+        },
+        "metric": {
+          "default": "euclidean",
+          "enum": [
+            "euclidean",
+            "cosine",
+            "manhattan"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "random_seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Random Seed"
+        },
+        "steepness": {
+          "default": 10.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Steepness",
+          "type": "number"
+        },
+        "max_count": {
+          "default": 50,
+          "exclusiveMinimum": 0,
+          "title": "Max Count",
+          "type": "integer"
+        },
+        "cooling_rate": {
+          "default": 0.1,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Cooling Rate",
+          "type": "number"
+        },
+        "counts": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Counts"
+        },
+        "normalize_objectives": {
+          "default": false,
+          "title": "Normalize Objectives",
+          "type": "boolean"
+        },
+        "sampling_temperature": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Sampling Temperature",
+          "type": "number"
+        },
+        "selection_method": {
+          "$ref": "#/$defs/SelectionMethod",
+          "default": "boltzmann"
+        },
+        "divisions": {
+          "default": 12,
+          "exclusiveMinimum": 0,
+          "title": "Divisions",
+          "type": "integer"
+        }
+      },
+      "title": "SelectionParams",
+      "type": "object"
+    },
+    "SimulatorMode": {
+      "enum": [
+        "sampling",
+        "relaxation"
+      ],
+      "title": "SimulatorMode",
+      "type": "string"
+    },
+    "SimulatorParams": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/SimulatorMode",
+          "default": "sampling"
+        },
+        "calculator": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Calculator"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        }
+      },
+      "title": "SimulatorParams",
+      "type": "object"
+    },
+    "TSFHashCfg": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "const": "tsf",
+          "default": "tsf",
+          "title": "Method",
+          "type": "string"
+        },
+        "kmax": {
+          "default": 3,
+          "exclusiveMinimum": 0,
+          "title": "Kmax",
+          "type": "integer"
+        },
+        "modes": {
+          "anyOf": [
+            {
+              "items": {
+                "maxItems": 3,
+                "minItems": 3,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Modes"
+        },
+        "per_species": {
+          "default": true,
+          "title": "Per Species",
+          "type": "boolean"
+        },
+        "ps_grid": {
+          "default": 0.1,
+          "exclusiveMinimum": 0.0,
+          "title": "Ps Grid",
+          "type": "number"
+        },
+        "lattice_grid": {
+          "default": 0.02,
+          "exclusiveMinimum": 0.0,
+          "title": "Lattice Grid",
+          "type": "number"
+        },
+        "e_grid": {
+          "default": 0.001,
+          "exclusiveMinimum": 0.0,
+          "title": "E Grid",
+          "type": "number"
+        },
+        "v_grid": {
+          "default": 0.01,
+          "exclusiveMinimum": 0.0,
+          "title": "V Grid",
+          "type": "number"
+        },
+        "include_energy": {
+          "default": true,
+          "title": "Include Energy",
+          "type": "boolean"
+        },
+        "include_volume": {
+          "default": true,
+          "title": "Include Volume",
+          "type": "boolean"
+        },
+        "use_spglib": {
+          "default": false,
+          "title": "Use Spglib",
+          "type": "boolean"
+        },
+        "symprec": {
+          "default": 0.001,
+          "exclusiveMinimum": 0.0,
+          "title": "Symprec",
+          "type": "number"
+        },
+        "angle_tolerance": {
+          "default": -1.0,
+          "title": "Angle Tolerance",
+          "type": "number"
+        },
+        "chunk_size": {
+          "default": 50000,
+          "exclusiveMinimum": 0,
+          "title": "Chunk Size",
+          "type": "integer"
+        },
+        "debug": {
+          "default": false,
+          "title": "Debug",
+          "type": "boolean"
+        }
+      },
+      "title": "TSFHashCfg",
+      "type": "object"
+    },
+    "ThermostatParams": {
+      "additionalProperties": false,
+      "properties": {
+        "initial_temperature": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Initial Temperature",
+          "type": "number"
+        },
+        "decay_rate": {
+          "default": 0.005,
+          "minimum": 0.0,
+          "title": "Decay Rate",
+          "type": "number"
+        },
+        "period": {
+          "default": 30,
+          "exclusiveMinimum": 0,
+          "title": "Period",
+          "type": "integer"
+        },
+        "temperature_bounds": {
+          "default": [
+            0.0,
+            1.1
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Temperature Bounds",
+          "type": "array"
+        },
+        "max_stall_offset": {
+          "default": 1.0,
+          "minimum": 0.0,
+          "title": "Max Stall Offset",
+          "type": "number"
+        },
+        "stall_growth_rate": {
+          "default": 0.01,
+          "minimum": 0.0,
+          "title": "Stall Growth Rate",
+          "type": "number"
+        },
+        "constant_temperature": {
+          "default": false,
+          "title": "Constant Temperature",
+          "type": "boolean"
+        }
+      },
+      "title": "ThermostatParams",
+      "type": "object"
+    },
+    "VariationParams": {
+      "additionalProperties": false,
+      "properties": {
+        "initial_mutation_rate": {
+          "default": 2.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Initial Mutation Rate",
+          "type": "number"
+        },
+        "min_mutation_rate": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Min Mutation Rate",
+          "type": "number"
+        },
+        "max_prob": {
+          "default": 0.95,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Max Prob",
+          "type": "number"
+        },
+        "min_prob": {
+          "default": 0.01,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Min Prob",
+          "type": "number"
+        },
+        "use_magnitude_scaling": {
+          "default": true,
+          "title": "Use Magnitude Scaling",
+          "type": "boolean"
+        },
+        "alpha": {
+          "default": 0.01,
+          "minimum": 0.0,
+          "title": "Alpha",
+          "type": "number"
+        },
+        "crossover_probability": {
+          "default": 0.1,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Crossover Probability",
+          "type": "number"
+        },
+        "adaptive_max_process": {
+          "default": 256,
+          "exclusiveMinimum": 0,
+          "title": "Adaptive Max Process",
+          "type": "integer"
+        },
+        "rng_seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rng Seed"
+        }
+      },
+      "title": "VariationParams",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Top-level configuration for BANS-GA (validated via Pydantic v2).\n\nThis model is intentionally strict (extra=forbid) to catch typos early, but\nremains assignment-validating to support programmatic modification during\nexperiments.",
+  "properties": {
+    "initial_generation": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Initial Generation",
+      "type": "integer"
+    },
+    "max_generations": {
+      "default": 100,
+      "exclusiveMinimum": 0,
+      "title": "Max Generations",
+      "type": "integer"
+    },
+    "min_size_for_filter": {
+      "default": 10,
+      "exclusiveMinimum": 0,
+      "title": "Min Size For Filter",
+      "type": "integer"
+    },
+    "foreigners": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Foreigners",
+      "type": "integer"
+    },
+    "save_logs": {
+      "default": true,
+      "title": "Save Logs",
+      "type": "boolean"
+    },
+    "save_generations": {
+      "default": true,
+      "title": "Save Generations",
+      "type": "boolean"
+    },
+    "output_path": {
+      "default": ".",
+      "format": "path",
+      "title": "Output Path",
+      "type": "string"
+    },
+    "resume": {
+      "default": true,
+      "title": "Resume",
+      "type": "boolean"
+    },
+    "resume_mode": {
+      "$ref": "#/$defs/ResumeMode",
+      "default": "folders_all"
+    },
+    "mem_hiwater_mb": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mem Hiwater Mb"
+    },
+    "population": {
+      "$ref": "#/$defs/PopulationParams"
+    },
+    "thermostat": {
+      "$ref": "#/$defs/ThermostatParams"
+    },
+    "evaluator": {
+      "$ref": "#/$defs/EvaluatorParams"
+    },
+    "multiobjective": {
+      "$ref": "#/$defs/SelectionParams"
+    },
+    "variation": {
+      "$ref": "#/$defs/VariationParams"
+    },
+    "mutation_funcs": {
+      "items": {
+        "anyOf": [
+          {
+            "description": "Callable function or shorthand",
+            "type": "string"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "items": {},
+            "type": "array"
+          }
+        ]
+      },
+      "title": "Mutation Funcs",
+      "type": "array"
+    },
+    "crossover_funcs": {
+      "items": {
+        "anyOf": [
+          {
+            "description": "Callable function or shorthand",
+            "type": "string"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "items": {},
+            "type": "array"
+          }
+        ]
+      },
+      "title": "Crossover Funcs",
+      "type": "array"
+    },
+    "simulator": {
+      "$ref": "#/$defs/SimulatorParams"
+    },
+    "convergence": {
+      "$ref": "#/$defs/ConvergenceParams"
+    },
+    "hashmap": {
+      "discriminator": {
+        "mapping": {
+          "rbf": "#/$defs/RBFHashCfg",
+          "rdf": "#/$defs/RDFHashCfg",
+          "tsf": "#/$defs/TSFHashCfg"
+        },
+        "propertyName": "method"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RDFHashCfg"
+        },
+        {
+          "$ref": "#/$defs/TSFHashCfg"
+        },
+        {
+          "$ref": "#/$defs/RBFHashCfg"
+        }
+      ],
+      "title": "Hashmap"
+    },
+    "agentic": {
+      "$ref": "#/$defs/AgenticParams"
+    },
+    "ensemble": {
+      "$ref": "#/$defs/EnsembleParams"
+    },
+    "hise": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HiSEParams"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Hierarchical Supercell Escalation (coarse-to-fine) settings."
+    },
+    "generative": {
+      "$ref": "#/$defs/GenerativeParams"
+    },
+    "initial_population": {
+      "anyOf": [
+        {
+          "items": {},
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Initial Population"
+    },
+    "debug": {
+      "default": false,
+      "title": "Debug",
+      "type": "boolean"
+    },
+    "rng": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rng"
+    }
+  },
+  "title": "GAConfig",
+  "type": "object"
+}
