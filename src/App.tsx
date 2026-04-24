@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Users, Thermometer, FlaskConical, Repeat, Play, Download, Upload, Code } from 'lucide-react';
 import schemaData from '../ezga-schema.json';
 import { SchemaForm } from './components/SchemaForm';

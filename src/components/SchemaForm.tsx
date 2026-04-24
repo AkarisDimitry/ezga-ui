@@ -382,7 +382,7 @@ export const SchemaForm: React.FC<SchemaFormProps> = ({ schema, data, onChange, 
 
   return (
     <div className="schema-form fade-in">
-      {Object.entries(finalSchema.properties || {}).map(([name, property]) => (
+      {Object.entries(finalSchema.properties || {}).map(([name, property]: [string, any]) => (
         <SchemaField
           key={name}
           name={name}
